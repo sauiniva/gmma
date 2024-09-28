@@ -1,0 +1,64 @@
+import yfinance as yf
+import pandas as pd
+import plotly.graph_objects as go
+
+# Define the function to calculate the GMMA
+def calculate_gmma(data, short_emas=[3, 5, 8, 10, 12, 15, 18, 21, 25,28,30], long_emas=[30, 35, 40, 45, 50, 55, 60, 65, 70,80,90,100,110,120,135,150,175,200]):
+    gmma = pd.DataFrame(index=data.index)
+
+    # Calculate short-term EMAs
+    for period in short_emas:
+        gmma[f'Short EMA {period}'] = data['Close'].ewm(span=period, adjust=False).mean()
+
+    # Calculate long-term EMAs
+    for period in long_emas:
+        gmma[f'Long EMA {period}'] = data['Close'].ewm(span=period, adjust=False).mean()
+
+    return gmma
+
+# Download the stock data using yfinance
+def get_stock_data(ticker, start, end):
+    return yf.download(ticker, start=start, end=end)
+
+# Plot the GMMA with Plotly
+def plot_gmma(stock_data, gmma):
+    fig = go.Figure()
+
+    # Plot the closing prices
+    fig.add_trace(go.Scatter(x=stock_data.index, y=stock_data['Close'], mode='lines', name='Close Price', line=dict(color='black', width=2)))
+
+    # Plot short-term EMAs
+    for column in gmma.columns[gmma.columns.str.contains('Short')]:
+        fig.add_trace(go.Scatter(x=gmma.index, y=gmma[column], mode='lines', name=column, line=dict(color='red',width=1)))
+
+    # Plot long-term EMAs
+    for column in gmma.columns[gmma.columns.str.contains('Long')]:
+        fig.add_trace(go.Scatter(x=gmma.index, y=gmma[column], mode='lines', name=column, line=dict(color='blue',width=1)))
+
+    # Set chart title and labels
+    fig.update_layout(
+        title="Expanded Guppy Multiple Moving Averages (GMMA)",
+        xaxis_title="Date",
+        yaxis_title="Price",
+        legend_title="Legend",
+        template="plotly_white",
+        hovermode="x unified"
+    )
+
+    fig.show()
+
+# Example usage
+if __name__ == "__main__":
+    # Define the stock ticker, start and end date
+    ticker = 'tatasteel.ns'  # Apple stock
+    start_date = '2020-01-01'
+    end_date = '2024-09-27'
+
+    # Get stock data
+    stock_data = get_stock_data(ticker, start_date, end_date)
+
+    # Calculate GMMA with expanded parameters
+    gmma_data = calculate_gmma(stock_data)
+
+    # Plot the GMMA with expanded EMAs
+    plot_gmma(stock_data, gmma_data)
